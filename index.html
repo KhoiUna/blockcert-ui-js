@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div>
+      <a href="./blockcert-ui.html">Go to Blockcert UI</a>
+    </div>
+    <div>
+      <h1>Customized UI</h1>
+
+      <form id="cert-form">
+        <input id="certURL" type="text" />
+        <button type="submit">Submit</button>
+      </form>
+
+      <div>
+        <h2>Response:</h2>
+
+        <div>
+          <h3>Verification process:</h3>
+          <ul id="status"></ul>
+        </div>
+
+        <div>
+          <h3>Verification result:</h3>
+          <p><b>Certificate name:</b> <span id="cert-name"></span></p>
+          <div>
+            <b><p>Cert image:</p></b>
+            <img
+              src=""
+              alt="Cert image"
+              style="display: none"
+              id="cert-img"
+              width="500"
+            />
+
+            <b><p>Seal image:</p></b>
+            <img src="" alt="Seal image" style="display: none" id="seal-img" />
+          </div>
+
+          <div>
+            <b><p>Issuer:</p></b>
+            <div style="margin: 0 1rem 0.5rem 0; word-wrap: break-word">
+              <code
+                id="issuer"
+                style="
+                  background-color: #c2c2c2;
+                  padding: 0.25rem;
+                  line-height: 1.2rem;
+                "
+              ></code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="./node_modules/@blockcerts/cert-verifier-js/dist/verifier-iife.js"></script>
+    <script>
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        const certURL =
+          document.querySelector("#certURL").value ||
+          "https://raw.githubusercontent.com/blockchain-certificates/blockcerts-verifier/master/test/fixtures/one-child-certificate-example.json";
+
+        const request = new XMLHttpRequest();
+        request.open("GET", certURL);
+        request.responseType = "json";
+        request.onload = async () => {
+          const certificate = new Verifier.Certificate(request.response);
+          await certificate.init();
+          console.log(certificate);
+          const { issuer, name, certificateImage, sealImage } = certificate;
+
+          // Verify
+          const verificationResult = await certificate.verify((item) => {
+            const { code, label, status, errorMessage } = item;
+            document.querySelector(
+              "#status"
+            ).innerHTML += `<li>Code: ${code} ${label} | Status: ${status}</li>`;
+
+            if (errorMessage) {
+              console.log(
+                `The step ${code} fails with the error: ${errorMessage}`
+              );
+            }
+          });
+
+          if (verificationResult.status === "failure") {
+            console.log(
+              `The certificate is not valid. Error: ${verificationResult.errorMessage}`
+            );
+          } else {
+            document.querySelector("#cert-img").src = certificateImage;
+            document.querySelector("#seal-img").src = sealImage;
+            document.querySelector("#cert-img").style.display = "block";
+            document.querySelector("#seal-img").style.display = "block";
+
+            document.querySelector("#cert-name").innerText = name;
+            document.querySelector("#issuer").innerText = await JSON.stringify(
+              issuer
+            );
+          }
+        };
+        request.send();
+      };
+
+      document
+        .querySelector("#cert-form")
+        .addEventListener("submit", handleSubmit);
+    </script>
+  </body>
+</html>
