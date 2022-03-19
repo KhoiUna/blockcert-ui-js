@@ -60,8 +60,9 @@
       </div>
     </div>
 
-    <script src="./node_modules/@blockcerts/cert-verifier-js/dist/verifier-iife.js"></script>
-    <script>
+    <script type="module">
+      import { Certificate } from "@blockcerts/cert-verifier-js";
+
       const handleSubmit = (e) => {
         e.preventDefault();
         const certURL =
@@ -72,7 +73,7 @@
         request.open("GET", certURL);
         request.responseType = "json";
         request.onload = async () => {
-          const certificate = new Verifier.Certificate(request.response);
+          const certificate = new Certificate(request.response);
           await certificate.init();
           console.log(certificate);
           const { issuer, name, certificateImage, sealImage } = certificate;
